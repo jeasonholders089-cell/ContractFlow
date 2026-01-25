@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>拖拽诊断</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-result {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ccc;
+        }
+        .test-result.pass { border-left-color: #52c41a; }
+        .test-result.fail { border-left-color: #ff4d4f; }
+        .test-result.warn { border-left-color: #faad14; }
+        .code {
+            background: #f5f5f5;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        button {
+            background: #1890ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #40a9ff; }
+    </style>
+</head>
+<body>
+    <h1>🔍 分隔条拖拽功能诊断</h1>
+    <p>请在智能合同审查系统页面中打开此诊断工具</p>
+
+    <button onclick="runTests()">🚀 运行诊断测试</button>
+    <button onclick="testResizerDirectly()">🖱️ 直接测试分隔条</button>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(type, title, details) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${title}</strong>${details ? `<div class="code">${details}</div>` : ''}`;
+            results.appendChild(div);
+        }
+
+        function runTests() {
+            document.getElementById('results').innerHTML = '';
+
+            // 获取主窗口
+            const mainDoc = window.opener ? window.opener.document : (window.parent !== window ? window.parent.document : null);
+
+            if (!mainDoc) {
+                addResult('warn', '⚠️ 无法访问主页面', '请确保此页面与主页面在同一个窗口中打开');
+                addResult('info', '💡 提示', '请在浏览器控制台直接运行以下代码进行诊断：');
+                return;
+            }
+
+            // 测试1: 检查 resizer 元素
+            const resizer = mainDoc.getElementById('resizer');
+            if (resizer) {
+                const styles = window.getComputedStyle ? (mainDoc.defaultView ? mainDoc.defaultView.getComputedStyle(resizer) : {}) : {};
+                addResult('pass', '✅ resizer 元素存在',
+                    `ID: ${resizer.id}\nClass: ${resizer.className}\nDisplay: ${styles.display}\nPosition: ${styles.position}\nZ-Index: ${styles.zIndex}`);
+            } else {
+                addResult('fail', '❌ resizer 元素不存在', '无法找到 id="resizer" 的元素');
+            }
+
+            // 测试2: 检查 preview-panel
+            const previewPanel = mainDoc.getElementById('preview-panel');
+            if (previewPanel) {
+                addResult('pass', '✅ preview-panel 元素存在',
+                    `Width: ${previewPanel.style.width || previewPanel.offsetWidth}px\nClass: ${previewPanel.className}`);
+            } else {
+                addResult('fail', '❌ preview-panel 元素不存在', '无法找到 id="preview-panel" 的元素');
+            }
+
+            // 测试3: 检查事件监听器
+            if (resizer) {
+                const hasClickListener = resizer.onclick !== null;
+                addResult(hasClickListener ? 'pass' : 'warn',
+                    hasClickListener ? '✅ resizer 有点击事件' : '⚠️ resizer 可能没有 mousedown 事件',
+                    '请在控制台运行以下代码检查：getEventListeners(document.getElementById("resizer"))');
+            }
+
+            // 测试4: 检查 CSS
+            const testResizer = document.createElement('div');
+            testResizer.className = 'resizer';
+            addResult('pass', '✅ CSS 类定义', '.resizer 样式已定义');
+        }
+
+        function testResizerDirectly() {
+            const mainDoc = window.opener ? window.opener.document : (window.parent !== window ? window.parent.document : document);
+            const resizer = mainDoc.getElementById('resizer');
+
+            if (!resizer) {
+                alert('找不到 resizer 元素！\n\n请在主页面中打开控制台，复制粘贴以下代码进行手动测试：\n\n' +
+                    '// 检查元素\n' +
+                    'console.log("resizer:", document.getElementById("resizer"));\n' +
+                    'console.log("previewPanel:", document.getElementById("preview-panel"));\n\n' +
+                    '// 检查样式\n' +
+                    'const r = document.getElementById("resizer");\n' +
+                    'if (r) {\n' +
+                    '    const s = getComputedStyle(r);\n' +
+                    '    console.log("display:", s.display);\n' +
+                    '    console.log("cursor:", s.cursor);\n' +
+                    '    console.log("pointerEvents:", s.pointerEvents);\n' +
+                    '}');
+                return;
+            }
+
+            // 尝试手动触发事件
+            const event = new MouseEvent('mousedown', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                clientX: 500,
+                clientY: 300
+            });
+
+            const dispatched = resizer.dispatchEvent(event);
+            addResult(dispatched ? 'pass' : 'fail',
+                dispatched ? '✅ 事件触发成功' : '❌ 事件触发失败',
+                '尝试触发 mousedown 事件');
+        }
+
+        // 页面加载时提供控制台代码
+        window.onload = function() {
+            addResult('info', '📋 浏览器控制台诊断代码', `
+// 复制以下代码到主页面控制台：
+
+// 1. 检查元素
+console.log('resizer:', document.getElementById('resizer'));
+console.log('previewPanel:', document.getElementById('preview-panel'));
+console.log('editorPanel:', document.getElementById('editor-panel'));
+
+// 2. 检查样式
+const r = document.getElementById('resizer');
+if (r) {
+    const s = getComputedStyle(r);
+    console.log('display:', s.display);
+    console.log('cursor:', s.cursor);
+    console.log('pointerEvents:', s.pointerEvents);
+    console.log('zIndex:', s.zIndex);
+    console.log('position:', s.position);
+}
+
+// 3. 测试点击
+if (r) {
+    r.addEventListener('click', () => console.log('resizer clicked!'));
+    console.log('已添加点击测试，请点击分隔条');
+}
+
+// 4. 重新初始化
+if (typeof initResizer === 'function') {
+    console.log('initResizer 函数存在');
+    initResizer();
+} else {
+    console.log('initResizer 函数不存在，需要重新加载页面');
+}
+            `);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分隔条测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+        }
+        .editor {
+            flex: 1;
+            background: #f5f5f5;
+            padding: 20px;
+            min-width: 200px;
+        }
+        .resizer {
+            width: 6px;
+            background: #E8E8E8;
+            cursor: col-resize;
+            flex-shrink: 0;
+            border-left: 1px solid #D9D9D9;
+            border-right: 1px solid #D9D9D9;
+            position: relative;
+            z-index: 1000;
+            transition: background 0.2s;
+        }
+        .resizer:hover,
+        .resizer:active {
+            background: #1677FF;
+        }
+        .resizer.resizing {
+            background: #1677FF;
+        }
+        .preview {
+            width: 384px;
+            background: white;
+            border-left: 1px solid #D9D9D9;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+        body.resizing {
+            cursor: col-resize;
+            user-select: none;
+        }
+        .log {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor">
+        <h2>编辑区</h2>
+        <p>拖拽中间的分隔条来调整宽度</p>
+    </div>
+    <div class="resizer" id="resizer"></div>
+    <div class="preview" id="preview">
+        <h2>预览区</h2>
+        <p id="width-display">宽度: 384px</p>
+    </div>
+    <div class="log" id="log"></div>
+
+    <script>
+        const resizer = document.getElementById('resizer');
+        const preview = document.getElementById('preview');
+        const widthDisplay = document.getElementById('width-display');
+        const log = document.getElementById('log');
+
+        function addLog(msg) {
+            log.innerHTML += msg + '<br>';
+            log.scrollTop = log.scrollHeight;
+        }
+
+        addLog('=== 测试开始 ===');
+
+        let isResizing = false;
+        let startX = 0;
+        let startWidth = 0;
+
+        // 测试1: 点击
+        resizer.addEventListener('click', () => {
+            addLog('✅ 点击事件触发');
+        });
+
+        // 测试2: mousedown
+        resizer.addEventListener('mousedown', (e) => {
+            addLog('🖱️ mousedown: ' + e.clientX);
+            isResizing = true;
+            startX = e.clientX;
+            startWidth = preview.offsetWidth;
+            resizer.classList.add('resizing');
+            document.body.classList.add('resizing');
+            e.preventDefault();
+        });
+
+        // 测试3: mousemove
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const deltaX = startX - e.clientX;
+            const newWidth = startWidth + deltaX;
+            const minWidth = 250;
+            const maxWidth = window.innerWidth - 250;
+            const finalWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+            preview.style.width = finalWidth + 'px';
+            widthDisplay.textContent = '宽度: ' + finalWidth + 'px';
+        });
+
+        // 测试4: mouseup
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                addLog('✅ 拖拽结束');
+                isResizing = false;
+                resizer.classList.remove('resizing');
+                document.body.classList.remove('resizing');
+            }
+        });
+
+        addLog('✅ 事件监听器已绑定');
+        addLog('请尝试拖拽中间的分隔条');
+    </script>
+</body>
+</html>
