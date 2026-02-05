@@ -43,8 +43,12 @@ env/
 # 上传文件
 uploads/*
 storage/*
+backend/uploads/*
+backend/storage/*
 !uploads/.gitkeep
 !storage/.gitkeep
+!backend/uploads/.gitkeep
+!backend/storage/.gitkeep
 
 # 临时文件
 temp/
@@ -57,3 +61,6 @@ tmp/
 .DS_Store
 Thumbs.db
 nul
+
+# Old frontend (deprecated)
+frontend/
