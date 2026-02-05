@@ -10,6 +10,7 @@ export const NAV_LINKS = [
   { label: "功能特色", href: "features" },
   { label: "解决方案", href: "solutions" },
   { label: "价格方案", href: "pricing" },
+  { label: "合同审查", href: "/contract-review" },
 ];
 
 export const FEATURES = [

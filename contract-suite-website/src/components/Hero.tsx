@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export default function Hero() {
+  const [, setLocation] = useLocation();
+
   return (
     <section 
         id="hero" 
@@ -40,11 +43,13 @@ export default function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-          <a href="http://localhost:5500/index.html" target="_blank" rel="noopener noreferrer" className="inline-block">
-            <Button size="lg" className="h-14 px-8 text-lg rounded-full bg-blue-600 hover:bg-blue-500 shadow-blue-900/20 shadow-xl transition-all hover:scale-105">
-              立即开始免费试用
-            </Button>
-          </a>
+          <Button
+            size="lg"
+            className="h-14 px-8 text-lg rounded-full bg-blue-600 hover:bg-blue-500 shadow-blue-900/20 shadow-xl transition-all hover:scale-105"
+            onClick={() => setLocation('/contract-review')}
+          >
+            立即开始免费试用
+          </Button>
           <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full bg-white/10 text-white border-white/20 hover:bg-white/20 backdrop-blur-sm transition-all">
             预约产品演示
           </Button>

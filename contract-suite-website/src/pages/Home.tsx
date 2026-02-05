@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
@@ -13,6 +14,8 @@ interface HomeProps {
 }
 
 export default function Home({ targetSection }: HomeProps) {
+  const [, setLocation] = useLocation();
+
   useEffect(() => {
     if (targetSection) {
       setTimeout(() => {
@@ -45,11 +48,14 @@ export default function Home({ targetSection }: HomeProps) {
                     加入超过 10,000 家企业的选择，立即开启智能化合规管理之旅。
                 </p>
                 <div className="flex justify-center gap-4">
-                    <a href="http://localhost:5500/index.html" target="_blank" rel="noopener noreferrer" className="inline-block">
-                        <Button size="lg" variant="secondary" className="h-14 px-8 text-lg rounded-full text-blue-600 hover:text-blue-700 font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all">
-                            免费注册试用
-                        </Button>
-                    </a>
+                    <Button
+                        size="lg"
+                        variant="secondary"
+                        className="h-14 px-8 text-lg rounded-full text-blue-600 hover:text-blue-700 font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
+                        onClick={() => setLocation('/contract-review')}
+                    >
+                        免费注册试用
+                    </Button>
                 </div>
             </div>
         </section>
