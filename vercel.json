@@ -1,7 +1,5 @@
 {
-  "buildCommand": "cd contract-suite-website && npm install && npm run build",
+  "buildCommand": "cd contract-suite-website && npm run build",
   "outputDirectory": "contract-suite-website/dist",
-  "framework": null,
-  "installCommand": "npm install",
-  "devCommand": "cd contract-suite-website && npm run dev"
+  "installCommand": "cd contract-suite-website && npm install"
 }
