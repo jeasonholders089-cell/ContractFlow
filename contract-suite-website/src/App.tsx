@@ -1,11 +1,10 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Router, Route, Switch } from "wouter";
+import { Router, Route } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Home from "@/pages/Home";
-import ContractReview from "@/pages/ContractReview";
 
 // Use hash-based routing (/#/) to support opening index.html directly via file:// protocol
 // Tolerant routing: unmatched paths are treated as anchor sections (e.g., /#/services → scroll to #services)
@@ -13,10 +12,7 @@ import ContractReview from "@/pages/ContractReview";
 function AppRouter() {
   return (
     <Router hook={useHashLocation}>
-      <Switch>
-        <Route path="/contract-review" component={ContractReview} />
-        <Route path="/:section?">{(params) => <Home targetSection={params.section} />}</Route>
-      </Switch>
+      <Route path="/:section?">{(params) => <Home targetSection={params.section} />}</Route>
     </Router>
   );
 }
