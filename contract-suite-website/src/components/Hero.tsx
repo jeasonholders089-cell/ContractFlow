@@ -44,9 +44,9 @@ export default function Hero() {
           <Button
             size="lg"
             className="h-14 px-8 text-lg rounded-full bg-blue-600 hover:bg-blue-500 shadow-blue-900/20 shadow-xl transition-all hover:scale-105"
-            onClick={() => alert('此功能将在整合后可用')}
+            asChild
           >
-            立即开始免费试用
+            <a href="/app.html">立即开始免费试用</a>
           </Button>
           <Button size="lg" variant="outline" className="h-14 px-8 text-lg rounded-full bg-white/10 text-white border-white/20 hover:bg-white/20 backdrop-blur-sm transition-all">
             预约产品演示

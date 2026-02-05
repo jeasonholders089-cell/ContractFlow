@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能合同审查系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#E6F4FF',
+                            100: '#BAE0FF',
+                            200: '#91CAFF',
+                            300: '#69B1FF',
+                            400: '#4096FF',
+                            500: '#1677FF',
+                            600: '#0958D9',
+                            700: '#003EB3',
+                            800: '#002C8C',
+                            900: '#001D66',
+                        },
+                        gray: {
+                            50: '#FAFAFA',
+                            100: '#F5F5F5',
+                            200: '#E8E8E8',
+                            300: '#D9D9D9',
+                            400: '#BFBFBF',
+                            500: '#8C8C8C',
+                            600: '#595959',
+                            700: '#434343',
+                            800: '#262626',
+                            900: '#1F1F1F',
+                        },
+                        border: '#E8E8E8',
+                        input: '#E8E8E8',
+                        ring: '#1677FF',
+                        background: '#FAFAFA',
+                        foreground: '#262626',
+                        muted: '#F5F5F5',
+                        'muted-foreground': '#8C8C8C',
+                        accent: '#E6F4FF',
+                        'accent-foreground': '#0958D9',
+                        card: '#FFFFFF',
+                        'card-foreground': '#262626',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans SC', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+                        'base': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                        'md': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                        'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025)',
+                        'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02)',
+                        '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
+                        'inner': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.03)',
+                    },
+                    borderRadius: {
+                        'sm': 'calc(var(--radius) - 4px)',
+                        'md': 'calc(var(--radius) - 2px)',
+                        'lg': 'var(--radius)',
+                        'xl': 'calc(var(--radius) + 4px)',
+                    },
+                    width: {
+                        '18': '4.5rem',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --radius: 0.75rem;
+        }
+
+        * {
+            font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+        }
+
+        /* 自定义滚动条 - 更现代的蓝色调 */
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #D9D9D9;
+            border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #4096FF;
+        }
+
+        /* Tooltip 样式 */
+        .nav-item-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 200ms ease, visibility 200ms ease;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .nav-item:hover .nav-item-tooltip,
+        .nav-item:focus .nav-item-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* 导航激活状态样式 - 统一蓝色调 */
+        .nav-item.active {
+            background-color: #E6F4FF;
+            color: #1677FF;
+        }
+        .nav-item.active svg {
+            color: #1677FF;
+        }
+
+        /* 按钮悬停效果 - 更柔和的过渡 */
+        button, .btn {
+            transition: all 0.2s ease;
+        }
+        button:hover, .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: white;
+            border: 1px solid #E8E8E8;
+            border-radius: var(--radius);
+            transition: all 0.2s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(22, 119, 255, 0.1);
+        }
+
+        /* 输入框焦点样式 */
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #1677FF;
+            box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.1);
+        }
+        .editor-content {
+            min-height: 100%;
+            outline: none;
+        }
+        .editor-content:empty:before {
+            content: attr(data-placeholder);
+            color: #9CA3AF;
+        }
+
+        /* 可拖拽分隔条样式 */
+        .resizer {
+            width: 6px;
+            flex: 0 0 6px;
+            background: #E8E8E8;
+            cursor: col-resize;
+            transition: background 0.2s ease;
+            position: relative;
+            z-index: 1000;
+            border-left: 1px solid #D9D9D9;
+            border-right: 1px solid #D9D9D9;
+            user-select: none;
+        }
+        .resizer:hover,
+        .resizer:active {
+            background: #1677FF;
+            border-left-color: #1677FF;
+            border-right-color: #1677FF;
+        }
+        .resizer.resizing {
+            background: #1677FF;
+            border-left-color: #1677FF;
+            border-right-color: #1677FF;
+        }
+
+        /* 防止拖拽时选中文字 */
+        body.resizing {
+            user-select: none;
+            cursor: col-resize;
+        }
+        body.resizing * {
+            cursor: col-resize !important;
+        }
+
+        /* 预览区样式 */
+        .preview-panel {
+            width: 400px;
+            flex-shrink: 0;
+            background: white;
+            border-left: 1px solid #E8E8E8;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+        }
+        .preview-panel.hidden {
+            width: 0 !important;
+            min-width: 0 !important;
+            overflow: hidden;
+            border-left: none;
+        }
+        .preview-header {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            background: white;
+            flex-shrink: 0;
+        }
+        .preview-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* 切换按钮样式 */
+        .toggle-preview-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #D9D9D9;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .toggle-preview-btn:hover {
+            background: #F5F5F5;
+            border-color: #1677FF;
+        }
+        .toggle-preview-btn svg {
+            width: 14px;
+            height: 14px;
+            color: #595959;
+            transition: transform 0.3s ease;
+        }
+        .toggle-preview-btn:hover svg {
+            color: #1677FF;
+        }
+        .toggle-preview-btn.expanded svg {
+            transform: rotate(180deg);
+        }
+
+        /* 浮动切换按钮（预览区隐藏时显示） */
+        .floating-toggle-btn {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 60px;
+            background: white;
+            border: 1px solid #D9D9D9;
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            transition: all 0.2s ease;
+        }
+        .floating-toggle-btn:hover {
+            background: #F5F5F5;
+            box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
+        }
+        .floating-toggle-btn.visible {
+            display: flex;
+        }
+        .floating-toggle-btn svg {
+            width: 16px;
+            height: 16px;
+            color: #595959;
+        }
+
+        /* 移除合同模板卡片上的操作图标边框 */
+        .bg-white.rounded-xl.border button,
+        .bg-white.rounded-xl .action-icon,
+        [data-page="contract-template"] button,
+        [data-page="contract-template"] .icon-btn {
+            border: none !important;
+        }
+
+        /* 移除所有圆形图标按钮的边框 */
+        button[class*="rounded-full"],
+        button[class*="rounded"][class*="w-"][class*="h-"] {
+            border: none !important;
+        }
+
+        /* 移除按钮内SVG的黑色描边边框 */
+        button svg[stroke="currentColor"],
+        .rounded-xl button svg {
+            stroke: currentColor !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div id="app" class="flex h-screen overflow-hidden">
+        <!-- 左侧图标导航栏 -->
+        <aside class="w-18 bg-white border-r border-gray-200 flex flex-col shadow-sm z-20 flex-shrink-0">
+            <!-- Logo Area -->
+            <div class="h-16 flex items-center justify-center border-b border-gray-100">
+                <div class="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center cursor-pointer hover:bg-primary-600 transition-colors duration-200" title="智能合同审查系统">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Navigation Icons -->
+            <nav class="flex-1 py-4 flex flex-col items-center gap-2 overflow-y-auto scrollbar-thin">
+                <!-- 合同编写 -->
+                <a href="#"
+                   class="nav-item relative group flex items-center justify-center w-12 h-12 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-primary-500 transition-all duration-200"
+                   data-page="contract-write"
+                   aria-label="合同编写">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    <span class="nav-item-tooltip absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg">合同编写</span>
+                </a>
+
+                <!-- 合同审查 -->
+                <a href="#"
+                   class="nav-item relative group flex items-center justify-center w-12 h-12 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-primary-500 transition-all duration-200"
+                   data-page="contract-review"
+                   aria-label="合同审查">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                    <span class="nav-item-tooltip absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg">合同审查</span>
+                </a>
+
+                <!-- 合同模板 -->
+                <a href="#"
+                   class="nav-item relative group flex items-center justify-center w-12 h-12 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-primary-500 transition-all duration-200"
+                   data-page="contract-template"
+                   aria-label="合同模板">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                    </svg>
+                    <span class="nav-item-tooltip absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg">合同模板</span>
+                </a>
+
+                <!-- 合同管理 -->
+                <a href="#"
+                   class="nav-item relative group flex items-center justify-center w-12 h-12 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-primary-500 transition-all duration-200"
+                   data-page="contract-manage"
+                   aria-label="合同管理">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                    </svg>
+                    <span class="nav-item-tooltip absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg">合同管理</span>
+                </a>
+
+                <!-- 合同统计 -->
+                <a href="#"
+                   class="nav-item relative group flex items-center justify-center w-12 h-12 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-primary-500 transition-all duration-200"
+                   data-page="contract-stats"
+                   aria-label="合同统计">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span class="nav-item-tooltip absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg">合同统计</span>
+                </a>
+
+                <div class="w-10 h-px bg-gray-200 my-2" aria-hidden="true"></div>
+
+                <!-- 合作商家 -->
+                <a href="#"
+                   class="nav-item relative group flex items-center justify-center w-12 h-12 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-primary-500 transition-all duration-200"
+                   data-page="partner-merchants"
+                   aria-label="合作商家">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <span class="nav-item-tooltip absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg">合作商家</span>
+                </a>
+            </nav>
+
+            <!-- User Profile -->
+            <div class="p-3 border-t border-gray-100">
+                <a href="#"
+                   class="nav-item relative group flex items-center justify-center w-12 h-12 rounded-xl hover:bg-gray-50 transition-all duration-200"
+                   data-page="profile"
+                   aria-label="用户设置">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:from-primary-500 hover:to-primary-700 transition-all duration-200">
+                        U
+                    </div>
+                    <span class="nav-item-tooltip absolute left-full ml-3 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg whitespace-nowrap shadow-lg">用户设置</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- 中间编辑区 -->
+        <main id="editor-panel" class="flex-1 overflow-hidden bg-gray-50">
+            <!-- 编辑内容区 - 各页面自己管理标题和工具栏 -->
+            <div id="page-content" class="h-full overflow-auto scrollbar-thin">
+                <!-- Default page: Contract Write -->
+            </div>
+        </main>
+
+        <!-- 可拖拽分隔条 -->
+        <div id="resizer" class="resizer" title="拖拽调整预览区宽度"></div>
+
+        <!-- 右侧预览区 -->
+        <aside id="preview-panel" class="preview-panel">
+            <div class="preview-header">
+                <button id="toggle-preview-btn" class="toggle-preview-btn" title="隐藏预览区">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="preview-content" class="preview-content">
+                <div class="flex flex-col items-center justify-center h-full text-center text-gray-400">
+                    <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-sm">在左侧编辑合同内容</p>
+                    <p class="text-xs mt-1">预览将实时显示</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 浮动切换按钮（预览区隐藏时显示） -->
+        <button id="floating-toggle-btn" class="floating-toggle-btn" title="展开预览区">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Mammoth.js for .docx parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <!-- 分隔条拖拽功能 -->
+    <script>
+        (function() {
+            'use strict';
+
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+
+            const resizer = document.getElementById('resizer');
+            const previewPanel = document.getElementById('preview-panel');
+            const toggleBtn = document.getElementById('toggle-preview-btn');
+            const floatingBtn = document.getElementById('floating-toggle-btn');
+
+            if (!resizer || !previewPanel) {
+                console.warn('分隔条或预览区未找到');
+                return;
+            }
+
+            // 从localStorage读取保存的宽度和显示状态
+            const savedWidth = localStorage.getItem('previewWidth');
+            const savedHidden = localStorage.getItem('previewHidden') === 'true';
+
+            if (savedWidth) {
+                const width = parseInt(savedWidth);
+                if (width >= 250 && width <= 1200) {
+                    previewPanel.style.width = width + 'px';
+                    // 同步调整批注栏宽度
+                    syncReviewAnnotationWidth(width);
+                }
+            }
+
+            // 初始化显示状态
+            let isHidden = savedHidden;
+            updatePreviewVisibility();
+
+            // 更新预览区显示状态
+            function updatePreviewVisibility() {
+                if (isHidden) {
+                    previewPanel.classList.add('hidden');
+                    floatingBtn.classList.add('visible');
+                    toggleBtn.classList.add('expanded');
+                } else {
+                    previewPanel.classList.remove('hidden');
+                    floatingBtn.classList.remove('visible');
+                    toggleBtn.classList.remove('expanded');
+                }
+                localStorage.setItem('previewHidden', isHidden);
+            }
+
+            // 切换预览区显示/隐藏
+            function togglePreview() {
+                isHidden = !isHidden;
+                updatePreviewVisibility();
+            }
+
+            // 同步调整审查后合同的批注栏宽度
+            function syncReviewAnnotationWidth(previewWidth) {
+                // 根据预览区宽度计算批注栏宽度
+                // 默认: 预览区 400px, 批注栏 w-56 (224px)
+                // 比例约为 0.56
+                const defaultPreviewWidth = 400;
+                const defaultAnnotationWidth = 224;
+                const ratio = defaultAnnotationWidth / defaultPreviewWidth;
+
+                // 计算新的批注栏宽度，限制在合理范围内
+                const minAnnotationWidth = 180;
+                const maxAnnotationWidth = 450;
+                let newAnnotationWidth = Math.round(previewWidth * ratio);
+                newAnnotationWidth = Math.max(minAnnotationWidth, Math.min(maxAnnotationWidth, newAnnotationWidth));
+
+                // 调整所有审查结果中的批注栏宽度
+                const annotationPanels = document.querySelectorAll('.contract-right-panel');
+                annotationPanels.forEach(panel => {
+                    panel.style.width = newAnnotationWidth + 'px';
+                    panel.style.minWidth = newAnnotationWidth + 'px';
+                });
+
+                // 保存批注栏宽度
+                localStorage.setItem('annotationWidth', newAnnotationWidth);
+            }
+
+            // 应用保存的批注栏宽度
+            function applySavedAnnotationWidth() {
+                const savedAnnotationWidth = localStorage.getItem('annotationWidth');
+                if (savedAnnotationWidth) {
+                    const width = parseInt(savedAnnotationWidth);
+                    const annotationPanels = document.querySelectorAll('.contract-right-panel');
+                    annotationPanels.forEach(panel => {
+                        panel.style.width = width + 'px';
+                        panel.style.minWidth = width + 'px';
+                    });
+                } else {
+                    // 如果没有保存的宽度，根据当前预览区宽度计算
+                    syncReviewAnnotationWidth(previewPanel.offsetWidth);
+                }
+            }
+
+            // 头部按钮点击
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', togglePreview);
+            }
+
+            // 浮动按钮点击
+            if (floatingBtn) {
+                floatingBtn.addEventListener('click', togglePreview);
+            }
+
+            // 鼠标按下
+            resizer.addEventListener('mousedown', function(e) {
+                if (e.button !== 0) return; // 只响应左键
+
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = previewPanel.offsetWidth;
+
+                resizer.classList.add('resizing');
+                document.body.classList.add('resizing');
+
+                e.preventDefault();
+            });
+
+            // 鼠标移动
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+
+                const deltaX = startX - e.clientX;
+                let newWidth = startWidth + deltaX;
+
+                // 限制宽度范围
+                const minWidth = 250;
+                const maxWidth = Math.min(1200, window.innerWidth - 400);
+
+                newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+
+                previewPanel.style.width = newWidth + 'px';
+
+                // 同步调整审查后合同的批注栏宽度
+                syncReviewAnnotationWidth(newWidth);
+            });
+
+            // 鼠标释放
+            document.addEventListener('mouseup', function() {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('resizing');
+                    document.body.classList.remove('resizing');
+
+                    // 保存宽度
+                    localStorage.setItem('previewWidth', previewPanel.offsetWidth);
+                }
+            });
+
+            // 窗口大小改变时调整
+            window.addEventListener('resize', function() {
+                const maxWidth = Math.min(1200, window.innerWidth - 400);
+                const currentWidth = previewPanel.offsetWidth;
+                if (currentWidth > maxWidth) {
+                    previewPanel.style.width = maxWidth + 'px';
+                    localStorage.setItem('previewWidth', maxWidth);
+                }
+            });
+        })();
+    </script>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
