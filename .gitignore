@@ -20,6 +20,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# Exception: Don't ignore frontend source lib directory
+!contract-suite-website/src/lib/
+
 # 虚拟环境
 venv/
 ENV/
