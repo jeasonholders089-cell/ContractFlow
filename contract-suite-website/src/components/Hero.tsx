@@ -4,9 +4,9 @@ import heroBg from "@/assets/hero-bg.jpg";
 export default function Hero() {
 
   return (
-    <section 
-        id="hero" 
-        className="relative min-h-[90vh] flex items-center justify-center overflow-hidden"
+    <section
+        id="hero"
+        className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-24"
     >
       {/* Background Image & Overlay */}
       <div className="absolute inset-0 z-0">
