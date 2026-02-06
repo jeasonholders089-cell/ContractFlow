@@ -14,7 +14,9 @@ from contextlib import asynccontextmanager
 
 from backend.config import get_settings
 from backend.database import init_db
-from backend.routers import reviews
+from backend.routers import reviews, contract_writing
+# 导入模型以确保表创建
+from backend.models import review, contract_writing as contract_writing_models
 
 
 settings = get_settings()
@@ -56,6 +58,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(reviews.router)
+app.include_router(contract_writing.router)
 
 
 @app.get("/")
