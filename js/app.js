@@ -8,6 +8,9 @@ class App {
         this.currentContractId = null;
         this.currentReviewId = null;
         this.pollInterval = null;
+        // 合同编写状态
+        this.currentDraftId = null;
+        this.isGenerating = false;
         // 预览区数据存储
         this.previewData = {
             originalContract: null,
@@ -99,7 +102,14 @@ class App {
                                 <option>服务协议</option>
                                 <option>保密协议</option>
                                 <option>租赁合同</option>
+                                <option>自定义合同</option>
                             </select>
+                        </div>
+
+                        <!-- Custom Contract Type (shown only when "自定义合同" is selected) -->
+                        <div id="customTypeContainer" class="mb-6" style="display: none;">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">自定义合同类型</label>
+                            <input type="text" id="customContractType" placeholder="例如：技术转让合同、股权转让协议等..." class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-shadow">
                         </div>
 
                         <!-- Contract Title -->
@@ -134,6 +144,9 @@ class App {
                             </button>
                             <button id="regenerateBtn" class="px-8 py-3 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors duration-200">
                                 重新生成
+                            </button>
+                            <button id="downloadBtn" class="px-8 py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors duration-200 shadow-sm disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+                                下载合同
                             </button>
                         </div>
                     </div>
@@ -769,8 +782,22 @@ class App {
     initContractWriteEvents() {
         const contractContent = document.getElementById('contractContent');
         const contractTitle = document.getElementById('contractTitle');
+        const templateSelect = document.getElementById('templateSelect');
+        const customTypeContainer = document.getElementById('customTypeContainer');
+        const customContractType = document.getElementById('customContractType');
         // 使用原有的预览区元素
         const previewContent = document.getElementById('preview-content');
+
+        // 监听模板选择变化，显示/隐藏自定义合同类型输入框
+        if (templateSelect && customTypeContainer) {
+            templateSelect.addEventListener('change', () => {
+                if (templateSelect.value === '自定义合同') {
+                    customTypeContainer.style.display = 'block';
+                } else {
+                    customTypeContainer.style.display = 'none';
+                }
+            });
+        }
 
         // 实时同步预览功能
         const updatePreview = () => {
@@ -820,9 +847,8 @@ class App {
         // 开始编写按钮
         const startWriteBtn = document.getElementById('startWriteBtn');
         if (startWriteBtn) {
-            startWriteBtn.addEventListener('click', () => {
-                // 模拟AI生成合同内容
-                const template = document.getElementById('templateSelect')?.value;
+            startWriteBtn.addEventListener('click', async () => {
+                const template = templateSelect?.value;
                 const title = contractTitle?.value || '合同';
 
                 if (template === '请选择合同模板...') {
@@ -830,12 +856,17 @@ class App {
                     return;
                 }
 
-                // 生成示例合同内容
-                const sampleContract = this.generateSampleContract(template, title);
-                if (contractContent) {
-                    contractContent.value = sampleContract;
-                    updatePreview();
+                // 检查是否为自定义合同且未填写类型
+                if (template === '自定义合同') {
+                    const customType = customContractType?.value?.trim();
+                    if (!customType) {
+                        alert('请输入自定义合同类型');
+                        return;
+                    }
                 }
+
+                // 使用 AI 生成合同内容
+                await this.generateContractWithAI(template, title, customContractType?.value);
             });
         }
 
@@ -846,10 +877,166 @@ class App {
                 if (contractContent) {
                     contractContent.value = '';
                     if (contractTitle) contractTitle.value = '';
+                    if (customContractType) customContractType.value = '';
+                    updatePreview();
+                    // 重置状态
+                    this.currentDraftId = null;
+                    const downloadBtn = document.getElementById('downloadBtn');
+                    if (downloadBtn) downloadBtn.disabled = true;
+                }
+            });
+        }
+
+        // 下载合同按钮
+        const downloadBtn = document.getElementById('downloadBtn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', () => {
+                this.downloadContract();
+            });
+        }
                     updatePreview();
                 }
             });
         }
+    }
+
+    // 显示加载状态
+    showLoading(message) {
+        // 创建加载遮罩层
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'loadingOverlay';
+        loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        loadingOverlay.innerHTML = `
+            <div class="bg-white rounded-lg p-8 flex flex-col items-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mb-4"></div>
+                <p class="text-gray-700 font-medium">${message}</p>
+            </div>
+        `;
+        document.body.appendChild(loadingOverlay);
+    }
+
+    // 隐藏加载状态
+    hideLoading() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.remove();
+        }
+    }
+
+    // 使用 AI 生成合同内容
+    async generateContractWithAI(template, title, customType) {
+        // 防止重复生成
+        if (this.isGenerating) {
+            alert('正在生成中，请稍候...');
+            return;
+        }
+
+        this.isGenerating = true;
+        this.showLoading('正在生成合同...');
+
+        try {
+            // 确定合同类型
+            let contractType = template;
+            let userRequirement = `生成一份${template}`;
+
+            if (template === '自定义合同') {
+                contractType = customType;
+                userRequirement = `生成一份${customType}`;
+            }
+
+            // Step 1: 创建草稿
+            const createResponse = await fetch('http://127.0.0.1:8000/api/writing/drafts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: title,
+                    user_requirement: userRequirement
+                })
+            });
+
+            if (!createResponse.ok) {
+                throw new Error('创建草稿失败');
+            }
+
+            const draft = await createResponse.json();
+            this.currentDraftId = draft.id;
+
+            // Step 2: 触发 AI 生成
+            const generateResponse = await fetch(`http://127.0.0.1:8000/api/writing/drafts/${draft.id}/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contract_type: contractType,
+                    elements: {}
+                })
+            });
+
+            if (!generateResponse.ok) {
+                throw new Error('触发生成失败');
+            }
+
+            // Step 3: 轮询等待生成完成
+            const generatedDraft = await this.pollForGeneration(draft.id);
+
+            // Step 4: 显示生成的内容
+            const content = generatedDraft.final_content || generatedDraft.generated_content;
+            const contractContent = document.getElementById('contractContent');
+            if (contractContent) {
+                contractContent.value = content;
+                // 触发预览更新
+                contractContent.dispatchEvent(new Event('input'));
+            }
+
+            // 启用下载按钮
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (downloadBtn) {
+                downloadBtn.disabled = false;
+            }
+
+            this.hideLoading();
+            this.isGenerating = false;
+
+        } catch (error) {
+            this.hideLoading();
+            this.isGenerating = false;
+            console.error('合同生成失败:', error);
+            alert('合同生成失败：' + error.message);
+        }
+    }
+
+    // 轮询等待生成完成
+    async pollForGeneration(draftId, maxAttempts = 30) {
+        for (let i = 0; i < maxAttempts; i++) {
+            const response = await fetch(`http://127.0.0.1:8000/api/writing/drafts/${draftId}`);
+
+            if (!response.ok) {
+                throw new Error('查询草稿状态失败');
+            }
+
+            const draft = await response.json();
+
+            if (draft.status === 'generated') {
+                return draft;
+            } else if (draft.status === 'failed') {
+                throw new Error('合同生成失败');
+            }
+
+            // 等待 2 秒后再次查询
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        throw new Error('合同生成超时，请稍后重试');
+    }
+
+    // 下载合同
+    downloadContract() {
+        if (!this.currentDraftId) {
+            alert('请先生成合同');
+            return;
+        }
+
+        // 直接跳转到下载链接
+        window.location.href = `http://127.0.0.1:8000/api/writing/drafts/${this.currentDraftId}/download`;
     }
 
     // 生成示例合同内容
